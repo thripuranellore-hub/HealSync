@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tokens | HealSync</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<nav class="navbar">
+    <a class="brand" href="{{ url_for('home') }}">HealSync</a>
+    <div class="nav-links">
+        <a href="{{ url_for('patient') }}">Dashboard</a>
+        <a href="{{ url_for('book_token') }}">Book Token</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="welcome-row">
+        <div>
+            <span class="tag">BOOKING HISTORY</span>
+            <h1>My Tokens</h1>
+            <p class="muted">View the tokens booked using your account.</p>
+        </div>
+        <a class="btn" href="{{ url_for('book_token') }}">+ New Booking</a>
+    </div>
+
+    <section class="panel">
+        {% if tokens %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>Department</th>
+                            <th>Visit Date</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for token in tokens %}
+                        <tr>
+                            <td><strong>#{{ token['id'] }}</strong></td>
+                            <td>{{ token['department'] }}</td>
+                            <td>{{ token['visit_date'] }}</td>
+                            <td>{{ token['symptoms'] }}</td>
+                            <td>
+                                <span class="status-badge
+                                    {% if token['status'] == 'Completed' %}completed
+                                    {% elif token['status'] == 'In Progress' %}progress
+                                    {% else %}waiting{% endif %}">
+                                    {{ token['status'] }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h2>No tokens yet</h2>
+                <p>You haven't booked a hospital token.</p>
+                <a class="btn" href="{{ url_for('book_token') }}">Book Your First Token</a>
+            </div>
+        {% endif %}
+    </section>
+    <a class="back-link" href="{{ url_for('patient') }}">← Back to Dashboard</a>
+</main>
+</body>
+</html>

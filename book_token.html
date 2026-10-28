@@ -1,0 +1,79 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Token | HealSync</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a class="brand" href="{{ url_for('home') }}">HealSync</a>
+    <div class="nav-links">
+        <a href="{{ url_for('patient') }}">Dashboard</a>
+        <a href="{{ url_for('my_tokens') }}">My Tokens</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<main class="auth-wrapper">
+    <section class="auth-card">
+        <span class="eyebrow">ONLINE BOOKING</span>
+        <h1>Book a Hospital Token</h1>
+        <p class="muted">Enter your hospital visit details.</p>
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        {% if booked_token %}
+        <div class="booking-success">
+            <span class="success-check">✓</span>
+            <h2>Token Booked Successfully!</h2>
+            <p>Your token number is</p>
+            <div class="token-number">#{{ booked_token }}</div>
+            <p>Please keep this number for reference.</p>
+
+            <a class="button full-width"
+               href="{{ url_for('my_tokens') }}">View My Tokens</a>
+
+            <a class="text-link centered-link"
+               href="{{ url_for('patient') }}">Back to Dashboard</a>
+        </div>
+        {% else %}
+        <form method="POST">
+            <label for="patient_name">Patient Name</label>
+            <input id="patient_name" type="text"
+                   value="{{ patient_name }}" readonly>
+
+            <label for="department">Department</label>
+            <select id="department" name="department" required>
+                <option value="">Select Department</option>
+                {% for department in departments %}
+                <option value="{{ department }}">
+                    {{ department }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <label for="visit_date">Visit Date</label>
+            <input id="visit_date" type="date"
+                   name="visit_date" min="{{ today }}" required>
+
+            <label for="symptoms">Reason for Visit</label>
+            <textarea id="symptoms" name="symptoms" rows="4"
+                      placeholder="Enter the reason for your visit"></textarea>
+
+            <button class="button full-width" type="submit">
+                Confirm Booking
+            </button>
+        </form>
+        {% endif %}
+    </section>
+</main>
+
+</body>
+</html>

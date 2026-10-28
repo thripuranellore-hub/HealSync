@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | HealSync</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<nav class="navbar">
+    <a class="brand" href="{{ url_for('home') }}">HealSync</a>
+    <div class="nav-links">
+        <a href="{{ url_for('admin') }}">Admin Dashboard</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="welcome-row">
+        <div>
+            <span class="tag">ADMINISTRATION</span>
+            <h1>Admin Dashboard</h1>
+            <p class="muted">Manage patient bookings and queue statuses.</p>
+        </div>
+        <a class="btn btn-light" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <p>Registered Patients</p>
+            <h2>{{ total_patients }}</h2>
+        </div>
+        <div class="stat-card">
+            <p>Total Tokens</p>
+            <h2>{{ total_tokens }}</h2>
+        </div>
+        <div class="stat-card">
+            <p>Waiting Tokens</p>
+            <h2>{{ waiting_tokens }}</h2>
+        </div>
+    </div>
+
+    <section class="panel">
+        <h2>Patient token management</h2>
+
+        {% if tokens %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Token</th>
+                        <th>Patient</th>
+                        <th>Department</th>
+                        <th>Visit Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for token in tokens %}
+                    <tr>
+                        <td><strong>#{{ token['id'] }}</strong></td>
+                        <td>{{ token['patient_name'] }}</td>
+                        <td>{{ token['department'] }}</td>
+                        <td>{{ token['visit_date'] }}</td>
+                        <td>{{ token['symptoms'] }}</td>
+                        <td>{{ token['status'] }}</td>
+                        <td>
+                            <form method="POST"
+                                  action="{{ url_for('update_token', token_id=token['id']) }}"
+                                  class="inline-form">
+                                <select name="status" aria-label="Token status">
+                                    <option value="Waiting"
+                                        {% if token['status'] == 'Waiting' %}selected{% endif %}>
+                                        Waiting
+                                    </option>
+                                    <option value="In Progress"
+                                        {% if token['status'] == 'In Progress' %}selected{% endif %}>
+                                        In Progress
+                                    </option>
+                                    <option value="Completed"
+                                        {% if token['status'] == 'Completed' %}selected{% endif %}>
+                                        Completed
+                                    </option>
+                                </select>
+                                <button class="btn small-btn" type="submit">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty-state">
+                <h2>No bookings available</h2>
+                <p>Patient tokens will appear here after they book.</p>
+            </div>
+        {% endif %}
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | HealSync</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<nav class="navbar">
+    <a class="brand" href="{{ url_for('home') }}">HealSync</a>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('register') }}">Register</a>
+    </div>
+</nav>
+
+<main class="auth-wrapper">
+    <section class="auth-card">
+        <span class="eyebrow">WELCOME BACK</span>
+        <h1>Login to HealSync</h1>
+        <p class="muted">Access your patient or administrator dashboard.</p>
+
+        {% if registered %}
+            <div class="alert alert-success">
+                Registration successful! You can now log in.
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <label for="role">Login as</label>
+            <select id="role" name="role" required>
+                <option value="patient">Patient</option>
+                <option value="admin">Administrator</option>
+            </select>
+
+            <label for="email">Patient email / Admin ID</label>
+            <input id="email" type="text" name="email"
+                   placeholder="Enter email or admin ID"
+                   autocomplete="username" required>
+
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password"
+                   placeholder="Enter your password"
+                   autocomplete="current-password" required>
+
+            <button class="button full-width" type="submit">Login</button>
+        </form>
+
+        <p class="form-bottom">
+            New patient?
+            <a href="{{ url_for('register') }}">Create an account</a>
+        </p>
+    </section>
+</main>
+</body>
+</html>
