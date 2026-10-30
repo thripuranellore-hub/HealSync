@@ -1,7 +1,16 @@
 
 import sqlite3
+import os
+from pathlib import Path
 
-DATABASE_NAME = "healsync.db"
+BASE_DIR = Path(__file__).resolve().parent
+
+# Use Render's persistent disk when configured.
+# Otherwise, use the project folder locally.
+DATABASE_NAME = os.environ.get(
+    "DATABASE_PATH",
+    str(BASE_DIR / "healsync.db")
+)
 
 
 def get_connection():
@@ -13,7 +22,6 @@ def get_connection():
 def create_tables():
     connection = get_connection()
 
-    # Create the patients table if it does not exist.
     connection.execute("""
         CREATE TABLE IF NOT EXISTS patients (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +32,6 @@ def create_tables():
         )
     """)
 
-    # Create the tokens table for new databases.
     connection.execute("""
         CREATE TABLE IF NOT EXISTS tokens (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,7 +45,6 @@ def create_tables():
         )
     """)
 
-    # Check columns in an existing tokens table.
     columns = {
         row["name"]
         for row in connection.execute(
@@ -46,36 +52,20 @@ def create_tables():
         ).fetchall()
     }
 
-    # Add missing columns without deleting existing records.
-    if "patient_id" not in columns:
-        connection.execute(
-            "ALTER TABLE tokens ADD COLUMN patient_id INTEGER"
-        )
+    missing_columns = {
+        "patient_id": "INTEGER",
+        "patient_name": "TEXT NOT NULL DEFAULT ''",
+        "department": "TEXT NOT NULL DEFAULT ''",
+        "visit_date": "TEXT NOT NULL DEFAULT ''",
+        "symptoms": "TEXT NOT NULL DEFAULT ''",
+        "status": "TEXT NOT NULL DEFAULT 'Waiting'"
+    }
 
-    if "patient_name" not in columns:
-        connection.execute(
-            "ALTER TABLE tokens ADD COLUMN patient_name TEXT NOT NULL DEFAULT ''"
-        )
-
-    if "department" not in columns:
-        connection.execute(
-            "ALTER TABLE tokens ADD COLUMN department TEXT NOT NULL DEFAULT ''"
-        )
-
-    if "visit_date" not in columns:
-        connection.execute(
-            "ALTER TABLE tokens ADD COLUMN visit_date TEXT NOT NULL DEFAULT ''"
-        )
-
-    if "symptoms" not in columns:
-        connection.execute(
-            "ALTER TABLE tokens ADD COLUMN symptoms TEXT NOT NULL DEFAULT ''"
-        )
-
-    if "status" not in columns:
-        connection.execute(
-            "ALTER TABLE tokens ADD COLUMN status TEXT NOT NULL DEFAULT 'Waiting'"
-        )
+    for column, definition in missing_columns.items():
+        if column not in columns:
+            connection.execute(
+                f"ALTER TABLE tokens ADD COLUMN {column} {definition}"
+            )
 
     connection.commit()
     connection.close()
