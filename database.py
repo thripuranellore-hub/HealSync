@@ -1,30 +1,30 @@
 
-import sqlite3
 import os
-from pathlib import Path
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-BASE_DIR = Path(__file__).resolve().parent
 
-# Use Render's persistent disk when configured.
-# Otherwise, use the project folder locally.
-DATABASE_NAME = os.environ.get(
-    "DATABASE_PATH",
-    str(BASE_DIR / "healsync.db")
-)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 def get_connection():
-    connection = sqlite3.connect(DATABASE_NAME)
-    connection.row_factory = sqlite3.Row
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL environment variable is missing")
+
+    connection = psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor
+    )
     return connection
 
 
 def create_tables():
     connection = get_connection()
+    cursor = connection.cursor()
 
-    connection.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS patients (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             phone TEXT NOT NULL,
@@ -32,45 +32,23 @@ def create_tables():
         )
     """)
 
-    connection.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            patient_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            patient_id INTEGER REFERENCES patients(id),
             patient_name TEXT NOT NULL DEFAULT '',
             department TEXT NOT NULL DEFAULT '',
             visit_date TEXT NOT NULL DEFAULT '',
             symptoms TEXT NOT NULL DEFAULT '',
-            status TEXT NOT NULL DEFAULT 'Waiting',
-            FOREIGN KEY (patient_id) REFERENCES patients(id)
+            status TEXT NOT NULL DEFAULT 'Waiting'
         )
     """)
 
-    columns = {
-        row["name"]
-        for row in connection.execute(
-            "PRAGMA table_info(tokens)"
-        ).fetchall()
-    }
-
-    missing_columns = {
-        "patient_id": "INTEGER",
-        "patient_name": "TEXT NOT NULL DEFAULT ''",
-        "department": "TEXT NOT NULL DEFAULT ''",
-        "visit_date": "TEXT NOT NULL DEFAULT ''",
-        "symptoms": "TEXT NOT NULL DEFAULT ''",
-        "status": "TEXT NOT NULL DEFAULT 'Waiting'"
-    }
-
-    for column, definition in missing_columns.items():
-        if column not in columns:
-            connection.execute(
-                f"ALTER TABLE tokens ADD COLUMN {column} {definition}"
-            )
-
     connection.commit()
+    cursor.close()
     connection.close()
 
 
 if __name__ == "__main__":
     create_tables()
-    print("HealSync database updated successfully.")
+    print("HealSync PostgreSQL database created successfully!")
