@@ -1,28 +1,158 @@
 
-@app.route("/my-tokens")
-@login_required
-def my_tokens():
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tokens | HealSync</title>
 
-    connection = get_connection()
-    cursor = connection.cursor()
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
 
-    try:
-        cursor.execute(
-            """
-            SELECT * FROM tokens
-            WHERE patient_id = %s
-            ORDER BY id DESC
-            """,
-            (session["patient_id"],)
-        )
+        body {
+            margin: 0;
+            background: #eef7f8;
+            color: #17324d;
+        }
 
-        tokens = cursor.fetchall()
+        nav {
+            background: white;
+            padding: 20px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        return render_template(
-            "my_tokens.html",
-            tokens=tokens
-        )
+        nav h2 {
+            color: #087e8b;
+            margin: 0;
+        }
 
-    finally:
-        cursor.close()
-        connection.close()
+        nav a {
+            text-decoration: none;
+            color: #087e8b;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 45px auto;
+            padding: 25px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #087e8b;
+        }
+
+        .token-card {
+            background: white;
+            padding: 22px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px #00000010;
+        }
+
+        .token-card p {
+            line-height: 1.7;
+        }
+
+        .status {
+            display: inline-block;
+            background: #e0f2f1;
+            color: #087e8b;
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .empty {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        .button {
+            display: inline-block;
+            background: #087e8b;
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <h2>HealSync</h2>
+        <a href="{{ url_for('patient_dashboard') }}">Dashboard</a>
+    </nav>
+
+    <div class="container">
+
+        <h1>My Booked Tokens</h1>
+
+        {% if tokens %}
+
+            {% for token in tokens %}
+
+                <div class="token-card">
+
+                    <h2>Token Number: {{ token.id }}</h2>
+
+                    <p>
+                        <strong>Patient:</strong>
+                        {{ token.patient_name }}
+                    </p>
+
+                    <p>
+                        <strong>Department:</strong>
+                        {{ token.department }}
+                    </p>
+
+                    <p>
+                        <strong>Visit Date:</strong>
+                        {{ token.visit_date }}
+                    </p>
+
+                    <p>
+                        <strong>Symptoms:</strong>
+                        {{ token.symptoms }}
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>
+                        <span class="status">
+                            {{ token.status }}
+                        </span>
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty">
+                <h2>No Tokens Booked Yet</h2>
+                <p>You have not booked any hospital tokens.</p>
+
+                <a class="button"
+                   href="{{ url_for('book_token') }}">
+                    Book Your Token
+                </a>
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
