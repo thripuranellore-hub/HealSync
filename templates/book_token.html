@@ -1,79 +1,67 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Token | HealSync</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+@app.route("/book-token", methods=["GET", "POST"])
+@login_required
+def book_token():
 
-<nav class="navbar">
-    <a class="brand" href="{{ url_for('home') }}">HealSync</a>
-    <div class="nav-links">
-        <a href="{{ url_for('patient') }}">Dashboard</a>
-        <a href="{{ url_for('my_tokens') }}">My Tokens</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
-    </div>
-</nav>
+    if request.method == "POST":
 
-<main class="auth-wrapper">
-    <section class="auth-card">
-        <span class="eyebrow">ONLINE BOOKING</span>
-        <h1>Book a Hospital Token</h1>
-        <p class="muted">Enter your hospital visit details.</p>
+        department = request.form.get("department", "").strip()
+        visit_date = request.form.get("visit_date", "").strip()
+        symptoms = request.form.get("symptoms", "").strip()
 
-        {% if error %}
-        <div class="alert alert-error">{{ error }}</div>
-        {% endif %}
+        if not department or not visit_date or not symptoms:
+            return render_template(
+                "book_token.html",
+                departments=DEPARTMENTS,
+                error="Please fill all the fields."
+            )
 
-        {% if booked_token %}
-        <div class="booking-success">
-            <span class="success-check">✓</span>
-            <h2>Token Booked Successfully!</h2>
-            <p>Your token number is</p>
-            <div class="token-number">#{{ booked_token }}</div>
-            <p>Please keep this number for reference.</p>
+        connection = None
+        cursor = None
 
-            <a class="button full-width"
-               href="{{ url_for('my_tokens') }}">View My Tokens</a>
+        try:
+            connection = get_connection()
+            cursor = connection.cursor()
 
-            <a class="text-link centered-link"
-               href="{{ url_for('patient') }}">Back to Dashboard</a>
-        </div>
-        {% else %}
-        <form method="POST">
-            <label for="patient_name">Patient Name</label>
-            <input id="patient_name" type="text"
-                   value="{{ patient_name }}" readonly>
+            cursor.execute(
+                """
+                INSERT INTO tokens
+                (patient_id, patient_name, department,
+                 visit_date, symptoms, status)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    session["patient_id"],
+                    session.get("patient_name", ""),
+                    department,
+                    visit_date,
+                    symptoms,
+                    "Waiting"
+                )
+            )
 
-            <label for="department">Department</label>
-            <select id="department" name="department" required>
-                <option value="">Select Department</option>
-                {% for department in departments %}
-                <option value="{{ department }}">
-                    {{ department }}
-                </option>
-                {% endfor %}
-            </select>
+            token = cursor.fetchone()
+            connection.commit()
 
-            <label for="visit_date">Visit Date</label>
-            <input id="visit_date" type="date"
-                   name="visit_date" min="{{ today }}" required>
+            return redirect(url_for("my_tokens"))
 
-            <label for="symptoms">Reason for Visit</label>
-            <textarea id="symptoms" name="symptoms" rows="4"
-                      placeholder="Enter the reason for your visit"></textarea>
+        except Exception as e:
+            if connection:
+                connection.rollback()
 
-            <button class="button full-width" type="submit">
-                Confirm Booking
-            </button>
-        </form>
-        {% endif %}
-    </section>
-</main>
+            app.logger.exception("TOKEN BOOKING ERROR")
 
-</body>
-</html>
+            return f"Token booking failed. Please check Render logs. Error: {str(e)}", 500
+
+        finally:
+            if cursor:
+                cursor.close()
+
+            if connection:
+                connection.close()
+
+    return render_template(
+        "book_token.html",
+        departments=DEPARTMENTS
+    )
