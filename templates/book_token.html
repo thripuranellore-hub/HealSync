@@ -1,67 +1,152 @@
 
-@app.route("/book-token", methods=["GET", "POST"])
-@login_required
-def book_token():
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Token | HealSync</title>
 
-    if request.method == "POST":
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
 
-        department = request.form.get("department", "").strip()
-        visit_date = request.form.get("visit_date", "").strip()
-        symptoms = request.form.get("symptoms", "").strip()
+        body {
+            margin: 0;
+            background: #eef7f8;
+            color: #17324d;
+        }
 
-        if not department or not visit_date or not symptoms:
-            return render_template(
-                "book_token.html",
-                departments=DEPARTMENTS,
-                error="Please fill all the fields."
-            )
+        nav {
+            background: white;
+            padding: 20px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        connection = None
-        cursor = None
+        nav h2 {
+            color: #087e8b;
+            margin: 0;
+        }
 
-        try:
-            connection = get_connection()
-            cursor = connection.cursor()
+        nav a {
+            color: #087e8b;
+            text-decoration: none;
+            font-weight: bold;
+        }
 
-            cursor.execute(
-                """
-                INSERT INTO tokens
-                (patient_id, patient_name, department,
-                 visit_date, symptoms, status)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id
-                """,
-                (
-                    session["patient_id"],
-                    session.get("patient_name", ""),
-                    department,
-                    visit_date,
-                    symptoms,
-                    "Waiting"
-                )
-            )
+        .container {
+            max-width: 550px;
+            background: white;
+            margin: 55px auto;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px #00000015;
+        }
 
-            token = cursor.fetchone()
-            connection.commit()
+        h1 {
+            text-align: center;
+            color: #087e8b;
+        }
 
-            return redirect(url_for("my_tokens"))
+        label {
+            display: block;
+            margin-top: 18px;
+            font-weight: bold;
+        }
 
-        except Exception as e:
-            if connection:
-                connection.rollback()
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #ccd9df;
+            border-radius: 6px;
+        }
 
-            app.logger.exception("TOKEN BOOKING ERROR")
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
 
-            return f"Token booking failed. Please check Render logs. Error: {str(e)}", 500
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            background: #087e8b;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-        finally:
-            if cursor:
-                cursor.close()
+        button:hover {
+            background: #066570;
+        }
 
-            if connection:
-                connection.close()
+        .error {
+            color: #c62828;
+            text-align: center;
+        }
+    </style>
+</head>
 
-    return render_template(
-        "book_token.html",
-        departments=DEPARTMENTS
-    )
+<body>
+
+    <nav>
+        <h2>HealSync</h2>
+        <a href="{{ url_for('patient_dashboard') }}">Dashboard</a>
+    </nav>
+
+    <div class="container">
+
+        <h1>Book Hospital Token</h1>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('book_token') }}">
+
+            <label for="department">Select Department</label>
+
+            <select name="department" id="department" required>
+                <option value="">Choose Department</option>
+
+                {% for department in departments %}
+                    <option value="{{ department }}">
+                        {{ department }}
+                    </option>
+                {% endfor %}
+
+            </select>
+
+            <label for="visit_date">Visit Date</label>
+
+            <input
+                type="date"
+                name="visit_date"
+                id="visit_date"
+                required
+            >
+
+            <label for="symptoms">Symptoms</label>
+
+            <textarea
+                name="symptoms"
+                id="symptoms"
+                placeholder="Enter your symptoms"
+                required
+            ></textarea>
+
+            <button type="submit">Book Token</button>
+
+        </form>
+
+    </div>
+
+</body>
+</html>
